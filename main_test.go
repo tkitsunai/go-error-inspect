@@ -46,6 +46,7 @@ func Testエラーを比較する_Equal(t *testing.T) {
 func Testエラーの値を同値かチェックする_生成された同じエラーを使う(t *testing.T) {
 	err1 := errors.New("this is error 1")
 	assert.True(t, errors.Is(err1, err1))
+	assert.True(t, err1 == err1)
 }
 
 /*
@@ -85,6 +86,12 @@ func Testエラーを包む時にフォーマットしない場合は同一性�
 	assert.Equal(t, false, errors.Is(wrappedError, err))
 }
 
+func Testエラーを包む時に間違ったWrap方法の場合は同一性が担保できない(t *testing.T) {
+	err := errors.New("error")
+	wrappedError := fmt.Errorf("wrap error %v", err)
+	assert.Equal(t, false, errors.Is(wrappedError, err))
+}
+
 type UnknownError struct {
 	Err string
 }
@@ -93,7 +100,7 @@ func (s UnknownError) Error() string {
 	return s.Err
 }
 
-func FactoryUnknownError() error {
+func FindSomething() error {
 	return &UnknownError{
 		Err: "unknown error",
 	}
@@ -108,7 +115,7 @@ func (n NotFoundError) Error() string {
 	return fmt.Sprintf("%s: %v", n.Err, n.Cause)
 }
 
-func FactoryNotFoundError() error {
+func FindHoge() error {
 	return &NotFoundError{
 		Err:   "not found error",
 		Cause: "i dont know",
@@ -116,31 +123,37 @@ func FactoryNotFoundError() error {
 }
 
 func Testエラーに対しAsを利用して指定したエラー型に変換する(t *testing.T) {
-	if err := FactoryNotFoundError(); err != nil {
+	if err := FindHoge(); err != nil {
 		var notFoundErr *NotFoundError
 		if errors.As(err, &notFoundErr) {
 			assert.Equal(t, "i dont know", notFoundErr.Cause)
+			return
 		}
 	}
+	t.Fail()
 }
 
 func TestWrapされたエラーに対しAsを利用して指定したエラー型に変換する(t *testing.T) {
-	err := FactoryNotFoundError()
+	err := FindHoge()
 	wrapError := fmt.Errorf("wrapping error: %w", err)
 	var notFoundErr *NotFoundError
 	if errors.As(wrapError, &notFoundErr) {
-		assert.Equal(t, "i dont know", notFoundErr.Cause)
+		assert.NotNil(t, notFoundErr)
+		assert.EqualError(t, notFoundErr, "not found error: i dont know")
+		return
 	}
+	t.Fail()
 }
 
 func Testエラーに対しAsを利用して指定したエラー型に変換したけど変換できなかった(t *testing.T) {
-	err := FactoryUnknownError()
+	err := FindSomething()
 	var notFoundErr *NotFoundError
 	assert.Equal(t, false, errors.As(err, &notFoundErr))
+	assert.Nil(t, notFoundErr)
 }
 
 func TestWrapされたエラーに対しAsを利用して指定したエラー型に変換したけど変換できなかった(t *testing.T) {
-	err := FactoryUnknownError()
+	err := FindSomething()
 	wrapError := fmt.Errorf("wrap: %w", err)
 	var notFoundErr *NotFoundError
 	assert.Equal(t, false, errors.As(wrapError, &notFoundErr))
