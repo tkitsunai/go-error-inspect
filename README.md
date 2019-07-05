@@ -1,3 +1,6 @@
+# Go 1.13beta1 Error Inspect!
+
+```
 === RUN   Testエラーを新しく作成する
 --- PASS: Testエラーを新しく作成する (0.00s)
 === RUN   Testエラーをエラーで包み込む
@@ -26,3 +29,4 @@
 --- PASS: TestWrapされたエラーに対しAsを利用して指定したエラー型に変換したけど変換できなかった (0.00s)
 PASS
 ok  	command-line-arguments	0.012s
+```
